@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prealca - Panel Gerencia</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="user-info">
+            <img id="user-photo" src="{{ usuario.foto if usuario and usuario.foto else '/static/img/user.png' }}" alt="Foto de {{ usuario.nombre if usuario else 'Usuario' }}" onerror="this.onerror=null;this.src='/static/img/user.png';">
+            <h2 id="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</h2>
+            <p id="user-role">{{ usuario.rol.capitalize() }}</p> {# Display actual role #}
+        </div>
+        <ul>
+            <li><a href="#" data-page="registro-guias-despacho" class="active"><i class="fas fa-clipboard-list"></i> Registro de Guías de Despacho</a></li>
+            <li><a href="#" data-page="manage-users"><i class="fas fa-users-cog"></i> Gestionar Usuarios</a></li>
+            <li><a href="#" data-page="manage-clients"><i class="fas fa-users"></i> Gestionar Clientes</a></li>
+            <li><a href="#" data-page="manage-drivers"><i class="fas fa-id-card"></i> Gestionar Choferes</a></li>
+            <li><a href="#" data-page="manage-trucks"><i class="fas fa-truck-moving"></i> Gestionar Camiones</a></li>
+            <li><a href="#" data-page="manage-sellers"><i class="fas fa-handshake"></i> Gestionar Vendedores</a></li>
+            <li><a href="#" data-page="manage-suppliers"><i class="fas fa-industry"></i> Gestionar Proveedores</a></li>
+            <li><a href="#" data-page="manage-supplier-purchase-orders"><i class="fas fa-file-invoice-dollar"></i> Órdenes de Compra (Proveedores)</a></li>
+            <li><a href="#" data-page="manage-inventory"><i class="fas fa-boxes"></i> Gestionar Inventario</a></li>
+            <li><a href="#" data-page="manage-concrete-designs"><i class="fas fa-flask"></i> Gestionar Diseños de Concreto</a></li>
+            <li><a href="#" data-page="manage-maintenance"><i class="fas fa-tools"></i> Gestionar Mantenimiento</a></li>
+            <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+        </ul>
+    </div>
+
+    <!-- Contenido -->
+    <div class="content">
+        <!-- Mensajes flash -->
+        <div id="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Páginas -->
+        <!-- NEW: Registro de Guías de Despacho Page -->
+        <div id="registro-guias-despacho" class="page active">
+            <h2>Registro de Guías de Despacho</h2>
+            <div class="table-container">
+                <table id="despachos-registro-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>N° Guía</th>
+                            <th>M3</th>
+                            <th>Diseño</th>
+                            <th>Cliente</th>
+                            <th>Chofer</th>
+                            <th>Camión</th>
+                            <th>Vendedor</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Users Page -->
+        <div id="manage-users" class="page">
+            <h2>Gestionar Usuarios</h2>
+            <div class="table-container">
+                <table id="users-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Última Actividad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Clients Page -->
+        <div id="manage-clients" class="page">
+            <h2>Gestionar Clientes</h2>
+            <button id="add-client-btn" class="btn-add">Agregar Cliente</button>
+            <div class="table-container">
+                <table id="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Dirección</th>
+                            <th>Teléfono</th>
+                            <th>Documento</th>
+                            <th>Vendedor</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Drivers Page -->
+        <div id="manage-drivers" class="page">
+            <h2>Gestionar Choferes</h2>
+            <button id="add-driver-btn" class="btn-add">Agregar Chofer</button>
+            <div class="table-container">
+                <table id="drivers-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cédula</th>
+                            <th>Licencia</th>
+                            <th>Vencimiento Licencia</th>
+                            <th>Certificado Médico</th>
+                            <th>Vencimiento Certificado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Trucks Page -->
+        <div id="manage-trucks" class="page">
+            <h2>Gestionar Camiones</h2>
+            <button id="add-truck-btn" class="btn-add">Agregar Camión</button>
+            <div class="table-container">
+                <table id="trucks-table">
+                    <thead>
+                        <tr>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Placa</th>
+                            <th>Capacidad (M3)</th>
+                            <th>Odómetro Actual (KM)</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Sellers Page -->
+        <div id="manage-sellers" class="page">
+            <h2>Gestionar Vendedores</h2>
+            <button id="add-seller-btn" class="btn-add">Agregar Vendedor</button>
+            <div class="table-container">
+                <table id="sellers-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cédula</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Suppliers Page -->
+        <div id="manage-suppliers" class="page">
+            <h2>Gestionar Proveedores</h2>
+            <button id="add-supplier-btn" class="btn-add">Agregar Proveedor</button>
+            <div class="table-container">
+                <table id="suppliers-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>RIF</th>
+                            <th>Dirección</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
+                            <th>Contacto</th>
+                            <th>Teléfono Contacto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Supplier Purchase Orders Page -->
+        <div id="manage-supplier-purchase-orders" class="page">
+            <h2>Órdenes de Compra (Proveedores)</h2>
+            <div class="table-container">
+                <table id="supplier-purchase-orders-table">
+                    <thead>
+                        <tr>
+                            <th>N° OC</th>
+                            <th>Fecha</th>
+                            <th>Proveedor</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Inventory Page -->
+        <div id="manage-inventory" class="page">
+            <h2>Gestionar Inventario</h2>
+            <button id="add-inventory-btn" class="btn-add">Agregar Material</button>
+            <div class="table-container">
+                <table id="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Densidad (kg/unidad)</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Concrete Designs Page -->
+        <div id="manage-concrete-designs" class="page">
+            <h2>Gestionar Diseños de Concreto</h2>
+            <button id="add-design-btn" class="btn-add">Agregar Diseño</button>
+            <div class="table-container">
+                <table id="concrete-designs-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Resistencia (kgf/cm²)</th>
+                            <th>Asentamiento (")</th>
+                            <th>Materiales</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Maintenance Page -->
+        <div id="manage-maintenance" class="page">
+            <h2>Gestionar Mantenimiento</h2>
+            <button id="add-maintenance-btn" class="btn-add">Registrar Mantenimiento</button>
+            <div class="table-container">
+                <table id="maintenance-table">
+                    <thead>
+                        <tr>
+                            <th>Camión (Placa)</th>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Costo</th>
+                            <th>Kilometraje Actual</th>
+                            <th>Próximo Kilometraje</th>
+                            <th>Próxima Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+    <!-- Modal para mensajes -->
+    <div id="modal-mensaje" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p id="mensaje-texto"></p>
+            <button id="modal-close-btn">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Modal para editar usuario -->
+    <div id="user-form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="form-title-user">Editar Usuario</h3>
+            <form id="user-form" action="/api/admin/users" method="POST" class="form-grid" enctype="multipart/form-data">
+                <input type="hidden" id="user_id_edit" name="id">
+                <div class="form-group">
+                    <label for="nombre_user_edit">Nombre:</label>
+                    <input type="text" id="nombre_user_edit" name="nombre" placeholder="Ingrese el nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="apellido_user_edit">Apellido:</label>
+                    <input type="text" id="apellido_user_edit" name="apellido" placeholder="Ingrese el apellido" required>
+                </div>
+                <div class="form-group">
+                    <label for="cedula_user_edit">Cédula:</label>
+                    <input type="text" id="cedula_user_edit" name="cedula" placeholder="Ingrese la cédula" required>
+                </div>
+                <div class="form-group">
+                    <label for="correo_user_edit">Correo:</label>
+                    <input type="email" id="correo_user_edit" name="correo" placeholder="Ingrese el correo" required>
+                </div>
+                <div class="form-group">
+                    <label>Foto Actual:</label>
+                    <img id="current_user_photo_preview" src="/static/img/user.png" alt="Foto actual" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label for="foto_user_edit">Cambiar Foto:</label>
+                    <input type="file" id="foto_user_edit" name="foto" accept="image/png, image/jpeg, image/jpg, image/gif">
+                </div>
+                <div class="form-group">
+                    <label for="rol_user_edit">Rol:</label>
+                    <select id="rol_user_edit" name="rol" required>
+                        <option value="administrador">Administrador</option>
+                        <option value="registro">Registro</option>
+                        <option value="control_calidad">Control y Calidad</option>
+                        <option value="vendedor">Vendedor</option>
+                        <option value="gerencia">Gerencia</option>
+                        <option value="sistema">Sistema</option> {# Added new sistema role #}
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar cliente -->
+    <div id="client-form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="form-title-client">Agregar Cliente</h3>
+            <form id="client-form" action="/api/clientes" method="POST" class="form-grid">
+                <input type="hidden" id="client_id_edit" name="id">
+                <div class="form-group">
+                    <label for="nombre_client_edit">Nombre:</label>
+                    <input type="text" id="nombre_client_edit" name="nombre" placeholder="Nombre del cliente" required>
+                </div>
+                <div class="form-group">
+                    <label for="direccion_client_edit">Dirección:</label>
+                    <input type="text" id="direccion_client_edit" name="direccion" placeholder="Dirección del cliente" required>
+                </div>
+                <div class="form-group">
+                    <label for="telefono_client_edit">Teléfono:</label>
+                    <input type="text" id="telefono_client_edit" name="telefono" placeholder="Teléfono del cliente" required>
+                </div>
+                <div class="form-group">
+                    <label for="documento_type_client_edit">Tipo de Documento:</label>
+                    <select id="documento_type_client_edit" name="documento_type" required>
+                        <option value="V">V - Venezolano</option>
+                        <option value="J">J - Jurídico</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="documento_number_client_edit">Número de Documento:</label>
+                    <input type="text" id="documento_number_client_edit" name="documento_number" placeholder="Ej: 12345678" required>
+                </div>
+                <div class="form-group">
+                    <label for="vendedor_client_edit">Vendedor:</label>
+                    <select id="vendedor_client_edit" name="vendedor" required>
+                        <option value="">Seleccione vendedor</option>
+                        <!-- Options will be loaded by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar chofer -->
+    <div id="driver-form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="form-title-driver">Agregar Chofer</h3>
+            <form id="driver-form" action="/api/choferes" method="POST" class="form-grid">
+                <input type="hidden" id="driver_id_edit" name="id">
+                <div class="form-group">
+                    <label for="nombre_driver_edit">Nombre:</label>
+                    <input type="text" id="nombre_driver_edit" name="nombre" placeholder="Nombre del chofer" required>
+                </div>
+                <div class="form-group">
+                    <label for="documento_type_driver_edit">Tipo de Documento:</label>
+                    <select id="documento_type_driver_edit" name="documento_type" required>
+                        <option value="V">V - Venezolano</option>
+                        <option value="J">J - Jurídico</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="documento_number_driver_edit">Número de Documento:</label>
+                    <input type="text" id="documento_number_driver_edit" name="documento_number" placeholder="Ej: 12345678" required>
+                </div>
+                <div class="form-group">
+                    <label for="licencia_driver_edit">Licencia:</label>
+                    <input type="text" id="licencia_driver_edit" name="licencia" placeholder="Número de licencia" required>
+                </div>
+                <div class="form-group">
+                    <label for="vencimiento_licencia_driver_edit">Vencimiento Licencia:</label>
+                    <input type="date" id="vencimiento_licencia_driver_edit" name="vencimientoLicencia" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificado_medico_driver_edit">Certificado Médico:</label>
+                    <input type="text" id="certificado_medico_driver_edit" name="certificadoMedico" placeholder="Número de certificado médico" required>
+                </div>
+                <div class="form-group">
+                    <label for="vencimiento_certificado_driver_edit">Vencimiento Certificado:</label>
+                    <input type="date" id="vencimiento_certificado_driver_edit" name="vencimientoCertificado" required>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar camión -->
+    <div id="truck-form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="form-title-truck">Agregar Camión</h3>
+            <form id="truck-form" action="/api/camiones" method="POST" class="form-grid">
+                <input type="hidden" id="truck_id_edit" name="id">
+                <div class="form-group">
+                    <label for="marca_truck_edit">Marca:</label>
+                    <input type="text" id="marca_truck_edit" name="marca" placeholder="Marca del camión" required>
+                </div>
+                <div class="form-group">
+                    <label for="modelo_truck_edit">Modelo:</label>
+                    <input type="text" id="modelo_truck_edit" name="modelo" placeholder="Modelo del camión" required>
+                </div>
+                <div class="form-group">
+                    <label for="placa_truck_edit">Placa:</label>
+                    <input type="text" id="placa_truck_edit" name="placa" placeholder="Placa del camión (Ej: A12BC3D)" required>
+                </div>
+                <div class="form-group">
+                    <label for="capacidad_truck_edit">Capacidad (M3):</label>
+                    <input type="number" id="capacidad_truck_edit" name="capacidad" placeholder="Capacidad en M3" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="odometer_truck_edit">Odómetro Actual (KM):</label>
+                    <input type="number" id="odometer_truck_edit" name="current_odometer" placeholder="Kilometraje actual" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="estado_truck_edit">Estado:</label>
+                    <select id="estado_truck_edit" name="estado" required>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar vendedor -->
+    <div id="seller-form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="form-title-seller">Agregar Vendedor</h3>
+            <form id="seller-form" action="/api/vendedores" method="POST" class="form-grid">
+                <input type="hidden" id="seller_id_edit" name="id">
+                <div class="form-group">
+                    <label for="nombre_seller_edit">Nombre:</label>
+                    <input type="text" id="nombre_seller_edit" name="nombre" placeholder="Nombre del vendedor" required>
+                </div>
+                <div class="form-group">
+                    <label for="documento_type_seller_edit">Tipo de Documento:</label>
+                    <select id="documento_type_seller_edit" name="documento_type" required>
+                        <option value="V">V - Venezolano</option>
+                        <option value="J">J - Jurídico</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="documento_number_seller_edit">Número de Documento:</label>
+                    <input type="text" id="documento_number_seller_edit" name="documento_number" placeholder="Ej: 12345678" required>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar proveedor -->
+    <div id="supplier-form-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close">&times;</span>
+            <h3 id="form-title-supplier">Agregar Proveedor</h3>
+            <form id="supplier-form" action="/api/proveedores" method="POST" class="form-grid">
+                <input type="hidden" id="supplier_id_edit" name="id">
+                <div class="form-group">
+                    <label for="nombre_supplier_edit">Nombre:</label>
+                    <input type="text" id="nombre_supplier_edit" name="nombre" placeholder="Nombre del proveedor" required>
+                </div>
+                <div class="form-group">
+                    <label for="rif_type_supplier_edit">Tipo de RIF:</label>
+                    <select id="rif_type_supplier_edit" name="rif_type" required>
+                        <option value="J">J - Jurídico</option>
+                        <option value="V">V - Venezolano</option>
+                        <option value="G">G - Gubernamental</option>
+                        <option value="E">E - Extranjero</option>
+                        <option value="P">P - Pasaporte</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rif_number_supplier_edit">Número de RIF:</label>
+                    <input type="text" id="rif_number_supplier_edit" name="rif_number" placeholder="Ej: 12345678" required>
+                </div>
+                <div class="form-group">
+                    <label for="direccion_supplier_edit">Dirección:</label>
+                    <input type="text" id="direccion_supplier_edit" name="direccion" placeholder="Dirección del proveedor" required>
+                </div>
+                <div class="form-group">
+                    <label for="telefono_supplier_edit">Teléfono:</label>
+                    <input type="text" id="telefono_supplier_edit" name="telefono" placeholder="Teléfono del proveedor" required>
+                </div>
+                <div class="form-group">
+                    <label for="email_supplier_edit">Email:</label>
+                    <input type="email" id="email_supplier_edit" name="email" placeholder="Email del proveedor" required>
+                </div>
+                <div class="form-group">
+                    <label for="nombre_contacto_supplier_edit">Nombre Contacto:</label>
+                    <input type="text" id="nombre_contacto_supplier_edit" name="nombre_contacto" placeholder="Nombre de persona de contacto">
+                </div>
+                <div class="form-group">
+                    <label for="telefono_contacto_supplier_edit">Teléfono Contacto:</label>
+                    <input type="text" id="telefono_contacto_supplier_edit" name="telefono_contacto" placeholder="Teléfono de persona de contacto">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Materiales Ofrecidos:</label>
+                    <div id="supplier_materials_container">
+                        <!-- Dynamic material inputs will be added here -->
+                        <div class="supplier-material-row">
+                            <input type="text" class="supplier-material-name" placeholder="Nombre Material" style="width: 40%;" required>
+                            <input type="number" class="supplier-material-price" placeholder="Precio" min="0.01" step="0.01" style="width: 20%;" required>
+                            <input type="text" class="supplier-material-unit" placeholder="Unidad (ej: kg, m3)" style="width: 25%;" required>
+                            <button type="button" class="remove-supplier-material-btn" style="background: none; border: none; color: red; cursor: pointer; font-size: 1.2em;">&times;</button>
+                        </div>
+                    </div>
+                    <button type="button" id="add-supplier-material-btn" class="btn-add" style="margin-top: 10px;">Agregar Material</button>
+                </div>
+
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles de la orden de compra de proveedor -->
+    <div id="supplier-purchase-order-details-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px; width: 90%; padding: 0;">
+            <span class="close-supplier-po-details-modal">&times;</span>
+            <div id="modal-supplier-purchase-order-preview-content" class="diseno-info-container" style="margin-top: 0 !important; border: none; padding: 20px; background-color: #fff;">
+                <!-- Content will be dynamically loaded here -->
+                <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="company-info" style="text-align: left;">
+                        <img src="/static/uploads/Logo Prealca Sin Fondo.png" alt="Prealca Logo" style="max-width: 300px; height: auto; margin-bottom: 5px;">
+                        <p style="margin: 0; font-size: 0.8em;">RIF.: J-30913171-0</p>
+                    </div>
+                    <div class="address-info" style="text-align: right; font-size: 0.9em;">
+                        <p style="margin: 0;">Av. 2 parcela E-37, Zona Ind. Sta Cruz</p>
+                        <p style="margin: 0;">Estado Aragua</p>
+                        <p style="margin: 0;">Telf: 04128936930 / Roberto Quintero</p>
+                    </div>
+                </div>
+                <h4 style="text-align: center; margin-bottom: 10px;">ORDEN DE COMPRA: <span id="modal_supplier_po_number"></span></h4>
+                <p style="text-align: right; margin-bottom: 20px;">Fecha: <span id="modal_supplier_po_date"></span></p>
+                
+                <div class="supplier-details" style="text-align: left; margin-bottom: 20px; font-size: 0.9em;">
+                    <p style="margin: 0;"><strong>Proveedor:</strong> <span id="modal_supplier_name"></span></p>
+                    <p style="margin: 0;"><strong>RIF:</strong> <span id="modal_supplier_rif"></span></p>
+                    <p style="margin: 0;"><strong>Dirección:</strong> <span id="modal_supplier_address"></span></p>
+                    <p style="margin: 0;"><strong>Contacto:</strong> <span id="modal_supplier_contact"></span></p>
+                    <p style="margin: 0;"><strong>Teléfono:</strong> <span id="modal_supplier_phone"></span></p>
+                </div>
+
+                <div class="table-container" style="margin-bottom: 20px;">
+                    <table id="modal-supplier-po-items-table" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Material</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cantidad</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Unidad</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Precio Unitario</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-supplier-po-items-tbody">
+                            <!-- Items will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="totals-summary" style="text-align: right; font-size: 0.9em;">
+                    <p style="margin: 0; font-weight: bold;">TOTAL: <span id="modal_supplier_total_to_pay">0.00</span></p>
+                </div>
+                <p style="text-align: left; margin-top: 20px; font-size: 0.9em;">Son: <span id="modal_supplier_total_words"></span></p>
+
+                <div class="modal-actions" style="margin-top: 20px; text-align: center;">
+                    <button id="modal-supplier-po-approve-btn" class="btn-add" style="background-color: #4CAF50; margin-right: 10px;">Aprobar</button>
+                    <button id="modal-supplier-po-deny-btn" class="btn-delete" style="background-color: #f44336;">Denegar</button>
+                    <button id="modal-supplier-po-print-btn" class="btn-add" style="margin-left: 10px; display: none;">Imprimir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar material de inventario -->
+    <div id="inventory-form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="form-title-inventory">Agregar Material al Inventario</h3>
+            <form id="inventory-form" action="/api/inventario" method="POST" class="form-grid">
+                <input type="hidden" id="inventory_id_edit" name="id">
+                <div class="form-group">
+                    <label for="nombre_inventory_edit">Nombre:</label>
+                    <input type="text" id="nombre_inventory_edit" name="nombre" placeholder="Nombre del material" required>
+                </div>
+                <div class="form-group">
+                    <label for="cantidad_inventory_edit">Cantidad:</label>
+                    <input type="number" id="cantidad_inventory_edit" name="cantidad" placeholder="Cantidad disponible" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="unidad_inventory_edit">Unidad:</label>
+                    <input type="text" id="unidad_inventory_edit" name="unidad" placeholder="Unidad de medida (ej: kg, m3)" required>
+                </div>
+                <div class="form-group">
+                    <label for="densidad_inventory_edit">Densidad (kg/unidad):</label>
+                    <input type="number" id="densidad_inventory_edit" name="densidad" placeholder="Densidad (ej: 1.5 para 1.5kg/unidad)" step="0.01" min="0.01">
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar diseño de concreto -->
+    <div id="concrete-design-form-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close">&times;</span>
+            <h3 id="form-title-design">Agregar Diseño de Concreto</h3>
+            <form id="concrete-design-form" action="/api/concrete_designs" method="POST" class="form-grid">
+                <input type="hidden" id="design_id_edit" name="id">
+                <div class="form-group">
+                    <label for="nombre_design_edit">Nombre:</label>
+                    <input type="text" id="nombre_design_edit" name="nombre" placeholder="Nombre del diseño (ej: H-21)" required>
+                </div>
+                <div class="form-group">
+                    <label for="resistencia_design_edit">Resistencia (kgf/cm²):</label>
+                    <input type="number" id="resistencia_design_edit" name="resistencia" placeholder="Ej: 210" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="asentamiento_design_edit">Asentamiento ("):</label>
+                    <input type="number" id="asentamiento_design_edit" name="asentamiento" placeholder="Ej: 4" step="0.01" min="0.01" required>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Materiales por M3 (kg):</label>
+                    <div id="design_materials_container">
+                        <!-- Dynamic material inputs will be added here -->
+                        <div class="design-material-row">
+                            <input type="text" class="design-material-name" placeholder="Nombre Material" style="width: 50%;" required>
+                            <input type="number" class="design-material-quantity" placeholder="Cantidad (kg)" min="0.01" step="0.01" style="width: 30%;" required>
+                            <button type="button" class="remove-design-material-btn" style="background: none; border: none; color: red; cursor: pointer; font-size: 1.2em;">&times;</button>
+                        </div>
+                    </div>
+                    <button type="button" id="add-design-material-btn" class="btn-add" style="margin-top: 10px;">Agregar Material</button>
+                </div>
+
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar mantenimiento -->
+    <div id="maintenance-form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="form-title-maintenance">Registrar Mantenimiento</h3>
+            <form id="maintenance-form" action="/api/mantenimiento" method="POST" class="form-grid">
+                <input type="hidden" id="maintenance_id_edit" name="id">
+                <div class="form-group">
+                    <label for="camion_maintenance_edit">Camión:</label>
+                    <select id="camion_maintenance_edit" name="camion_id" required>
+                        <option value="">Seleccione camión</option>
+                        <!-- Options will be loaded by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fecha_maintenance_edit">Fecha:</label>
+                    <input type="date" id="fecha_maintenance_edit" name="fecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipo_maintenance_edit">Tipo de Mantenimiento:</label>
+                    <select id="tipo_maintenance_edit" name="tipo_mantenimiento" required>
+                        <option value="">Seleccione tipo</option>
+                        <option value="Cambio de Aceite">Cambio de Aceite</option>
+                        <option value="Revisión General">Revisión General</option>
+                        <option value="Frenos">Frenos</option>
+                        <option value="Neumáticos">Neumáticos</option>
+                        <option value="Inspección de Fluidos">Inspección de Fluidos</option>
+                        <option value="Reemplazo de Filtros">Reemplazo de Filtros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="kilometraje_actual_maintenance_edit">Kilometraje Actual (KM):</label>
+                    <input type="number" id="kilometraje_actual_maintenance_edit" name="kilometraje_actual" placeholder="Kilometraje actual" min="0" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="descripcion_maintenance_edit">Descripción:</label>
+                    <textarea id="descripcion_maintenance_edit" name="descripcion" placeholder="Detalles del mantenimiento" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="costo_maintenance_edit">Costo:</label>
+                    <input type="number" id="costo_maintenance_edit" name="costo" placeholder="Costo del mantenimiento" step="0.01" min="0" required>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles de la guía de despacho -->
+    <div id="dispatch-details-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px; width: 90%; padding: 0;">
+            <span class="close-dispatch-details-modal">&times;</span>
+            <div id="modal-dispatch-preview-content" class="diseno-info-container" style="margin-top: 0 !important; border: none; padding: 20px; background-color: #fff;">
+                <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="company-info" style="text-align: left;">
+                        <img src="/static/uploads/Logo Prealca Sin Fondo.png" alt="Prealca Logo" style="max-width: 300px; height: auto; margin-bottom: 5px;">
+                        <p style="margin: 0; font-size: 0.8em;">RIF.: J-30913171-0</p>
+                    </div>
+                    <div class="address-info" style="text-align: right; font-size: 0.9em;">
+                        <p style="margin: 0;">Av. 2 parcela E-37, Zona Ind. Sta Cruz</p>
+                        <p style="margin: 0;">Estado Aragua</p>
+                        <p style="margin: 0;">Telf: 04128936930 / Roberto Quintero</p>
+                    </div>
+                </div>
+                <h4 style="text-align: center; margin-bottom: 10px;">GUÍA DE DESPACHO: <span id="modal_dispatch_guia_number">N/A</span></h4>
+                <p style="text-align: right; margin-bottom: 20px;">Fecha: <span id="modal_dispatch_date">N/A</span></p>
+                
+                <div class="dispatch-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 0.9em;">
+                    <p style="margin: 0;"><strong>Cliente:</strong> <span id="modal_dispatch_client_name">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Dirección:</strong> <span id="modal_dispatch_client_address">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Teléfono:</strong> <span id="modal_dispatch_client_phone">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>RIF/Cédula:</strong> <span id="modal_dispatch_client_document">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Chofer:</strong> <span id="modal_dispatch_chofer_name">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Camión:</strong> <span id="modal_dispatch_camion_info">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>M3:</strong> <span id="modal_dispatch_m3">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Diseño:</strong> <span id="modal_dispatch_diseno_name">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Vendedor:</strong> <span id="modal_dispatch_vendedor_name">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Estado:</strong> <span id="modal_dispatch_status">Pendiente</span></p>
+                    <p style="margin: 0;"><strong>Hora de Salida:</strong> <span id="modal_dispatch_hora_salida">N/A</span></p>
+                    <p style="margin: 0;"><strong>Hora de Llegada:</strong> <span id="modal_dispatch_hora_llegada">N/A</span></p>
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
+
+                <div class="received-by-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
+                    <p style="margin: 0;"><strong>RECIBIDO POR:</strong></p>
+                    <p style="margin: 0;"><strong>Firma:</strong> <span id="modal_dispatch_received_signature">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Nombre:</strong> <span id="modal_dispatch_received_name">SIN RELLENAR</span></p>
+                    <p style="margin: 0;"><strong>Fecha y Hora:</strong> <span id="modal_dispatch_received_datetime">SIN RELLENAR</span></p>
+                </div>
+
+                <div class="modal-actions" style="margin-top: 20px; text-align: center;">
+                    <button id="modal-dispatch-approve-btn" class="btn-add" style="background-color: #4CAF50; margin-right: 10px;">Aprobar</button>
+                    <button id="modal-dispatch-deny-btn" class="btn-delete" style="background-color: #f44336;">Denegar</button>
+                    <button id="modal-dispatch-print-btn" class="btn-add" style="margin-left: 10px; display: none;">Imprimir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.userInfo = {
+            id: "{{ usuario.id }}",
+            nombre: "{{ usuario.nombre }}",
+            apellido: "{{ usuario.apellido }}",
+            nombreCompleto: "{{ usuario.nombre }} {{ usuario.apellido }}",
+            rol: "{{ usuario.rol }}",
+            foto: "{{ usuario.foto if usuario and usuario.foto else '/static/img/user.png' }}"
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
+    <script src="/static/js/dashboard_gerencia.js"></script>
+</body>
+</html>

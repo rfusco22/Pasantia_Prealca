@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prealca - Panel Administrador</title>
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="user-info">
+        <img id="user-photo" src="{{ usuario.foto if usuario and usuario.foto else '/static/img/user.png' }}" alt="Foto de {{ usuario.nombre if usuario else 'Usuario' }}" onerror="this.onerror=null;this.src='/static/img/user.png';">
+        <h2 id="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</h2>
+        <p id="user-role">{{ usuario.rol.capitalize() }}</p> {# Display actual role #}
+    </div>
+    <ul>
+        <li><a href="#" data-page="alerts-material-requests" class="active"><i class="fas fa-exclamation-triangle"></i> Alertas de Solicitudes</a></li>
+        <li><a href="#" data-page="purchase-guide"><i class="fas fa-file-invoice"></i> Generar Guía de Compra</a></li>
+        <li><a href="#" data-page="purchase-orders-list"><i class="fas fa-clipboard-list"></i> Registro de Guías de Compra</a></li>
+        {# Conditional rendering for Add User and Manage Users based on role #}
+        {% if usuario.rol == 'sistema' %}
+        <li><a href="#" data-page="add-user"><i class="fas fa-user-plus"></i> Agregar Usuario</a></li>
+        {% endif %}
+        {% if usuario.rol in ['administrador', 'gerencia', 'sistema'] %} {# Updated condition #}
+        <li><a href="#" data-page="manage-users"><i class="fas fa-users-cog"></i> Gestionar Usuarios</a></li>
+        <li><a href="#" data-page="material-requests-admin"><i class="fas fa-box-open"></i> Solicitud de Material</a></li>
+        {% endif %}
+        <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+    </ul>
+</div>
+
+<!-- Contenido -->
+<div class="content">
+    <!-- Mensajes flash -->
+    <div id="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Páginas -->
+
+    <!-- Updated: Purchase Guide Page (for Suppliers) -->
+    <div id="purchase-guide" class="page">
+        <h2>Generar Guia de Compra</h2>
+        <div class="purchase-guide-layout">
+            <form id="purchase-guide-form" class="form-grid">
+                <input type="hidden" id="po_order_date_hidden" name="po_order_date">
+                <div class="form-group">
+                    <label for="po_supplier_id">Proveedor:</label>
+                    <select id="po_supplier_id" name="po_supplier_id" required>
+                        <option value="">Seleccione proveedor</option>
+                        <!-- Options will be loaded by JavaScript -->
+                    </select>
+                </div>
+                <!-- Removed visible date input from form -->
+
+                <div class="form-group full-width">
+                    <label>Items:</label>
+                    <div id="po_items_container">
+                        <!-- Dynamic item inputs will be added here -->
+                        <div class="po-item-row">
+                            <select class="po-item-material-select" style="width: 40%;" required>
+                                <option value="">Seleccione material</option>
+                            </select>
+                            <input type="number" class="po-item-quantity" placeholder="Cantidad" min="0.01" step="0.01" style="width: 15%;" required>
+                            <span class="po-item-unit-price-display" style="width: 20%; text-align: right;">P. Unitario: 0.00</span>
+                            <span class="po-item-unit-display" style="width: 10%; text-align: left;">Unidad</span>
+                            <span class="po-item-total" style="width: 10%; text-align: right;">0.00</span>
+                            <button type="button" class="remove-item-btn" style="background: none; border: none; color: red; cursor: pointer; font-size: 1.2em;">&times;</button>
+                        </div>
+                    </div>
+                    <button type="button" id="add-item-btn" class="btn-add" style="margin-top: 10px;">Agregar Item</button>
+                </div>
+
+                <div class="form-group full-width totals-section">
+                    <div class="total-row">
+                        <span>TOTAL:</span>
+                        <span id="po_total_to_pay">0.00</span>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <button type="submit">Generar Guia</button>
+                </div>
+            </form>
+            <div id="purchase-guide-preview" class="diseno-info-container" style="margin-top: 0 !important; border: 1px solid #ccc; padding: 20px; background-color: #fff;">
+                <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="company-info" style="text-align: left;">
+                        <img src="/static/uploads/Logo Prealca Sin Fondo.png" alt="Prealca Logo" style="max-width: 300px; height: auto; margin-bottom: 5px;">
+                        <p style="margin: 0; font-size: 0.8em;">RIF.: J-30913171-0</p>
+                    </div>
+                    <div class="address-info" style="text-align: right; font-size: 0.9em;">
+                        <p style="margin: 0;">Av. 2 parcela E-37, Zona Ind. Sta Cruz</p>
+                        <p style="margin: 0;">Estado Aragua</p>
+                        <p style="margin: 0;">Telf: 04128936930 / Roberto Quintero</p>
+                    </div>
+                </div>
+                <h4 style="text-align: center; margin-bottom: 10px;">ORDEN DE COMPRA: <span id="preview_po_number"></span></h4>
+                <p style="text-align: right; margin-bottom: 20px;">Fecha: <span id="preview_po_date"></span></p>
+                
+                <div class="supplier-details" style="text-align: left; margin-bottom: 20px; font-size: 0.9em;">
+                    <p style="margin: 0;"><strong>Proveedor:</strong> <span id="preview_supplier_name"></span></p>
+                    <p style="margin: 0;"><strong>RIF:</strong> <span id="preview_supplier_rif"></span></p>
+                    <p style="margin: 0;"><strong>Dirección:</strong> <span id="preview_supplier_address"></span></p>
+                    <p style="margin: 0;"><strong>Contacto:</strong> <span id="preview_supplier_contact"></span></p>
+                    <p style="margin: 0;"><strong>Teléfono:</strong> <span id="preview_supplier_phone"></span></p>
+                </div>
+
+                <div class="table-container" style="margin-bottom: 20px;">
+                    <table id="preview-items-table" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Material</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cantidad</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Unidad</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Precio Unitario</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="preview-items-tbody">
+                            <!-- Items will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="totals-summary" style="text-align: right; font-size: 0.9em;">
+                    <p style="margin: 0; font-weight: bold;">TOTAL: <span id="preview_total_to_pay">0.00</span></p>
+                </div>
+                <p style="text-align: left; margin-top: 20px; font-size: 0.9em;">Son: <span id="preview_total_words"></span></p>
+
+                <button id="download-purchase-pdf" class="btn-add" style="margin-top: 20px; display: none;">Descargar PDF</button>
+                <button id="print-purchase-order" class="btn-add" style="margin-top: 20px; margin-left: 10px; display: none;">Imprimir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Purchase Orders List Page -->
+    <div id="purchase-orders-list" class="page">
+        <h2>Registro de Guías de Compra</h2>
+        <div class="table-container">
+            <table id="purchase-orders-table">
+                <thead>
+                    <tr>
+                        <th>N° GUÍA</th>
+                        <th>FECHA</th>
+                        <th>PROVEEDOR</th>
+                        <th>TOTAL</th>
+                        <th>ESTATUS</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- NEW: Manage Users Page -->
+    <div id="manage-users" class="page">
+        <h2>Gestionar Usuarios</h2>
+        <div class="table-container">
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Última Actividad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- NEW: Material Requests Admin Page -->
+    <div id="material-requests-admin" class="page">
+        <h2>Solicitudes de Material</h2>
+        <div class="table-container">
+            <table id="admin-material-requests-table">
+                <thead>
+                    <tr>
+                        <th>Fecha Solicitud</th>
+                        <th>Solicitante</th>
+                        <th>Material</th>
+                        <th>Cantidad</th>
+                        <th>Unidad</th>
+                        <th>Razón</th>
+                        <th>Estado</th>
+                        <th>Respondido Por</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- NEW: Alerts Material Requests Page -->
+    <div id="alerts-material-requests" class="page active">
+        <h2>Alertas de Solicitudes de Material Pendientes</h2>
+        <p class="alert-description">Aquí puedes ver todas las solicitudes de material que están pendientes de aprobación.</p>
+        <div class="table-container">
+            <table id="pending-material-requests-table">
+                <thead>
+                    <tr>
+                        <th>Fecha Solicitud</th>
+                        <th>Solicitante</th>
+                        <th>Material</th>
+                        <th>Cantidad</th>
+                        <th>Unidad</th>
+                        <th>Razón</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+<!-- Modal para mensajes -->
+<div id="modal-mensaje" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="mensaje-texto"></p>
+        <button id="modal-close-btn">Cerrar</button>
+    </div>
+</div>
+
+<!-- NEW: Modal para ver detalles de la orden de compra -->
+<div id="purchase-order-details-modal" class="modal">
+    <div class="modal-content" style="max-width: 900px; width: 90%; padding: 0;">
+        <span class="close-po-details-modal">&times;</span>
+        <div id="modal-purchase-order-preview-content" class="diseno-info-container" style="margin-top: 0 !important; border: none; padding: 20px; background-color: #fff;">
+            <!-- Content will be dynamically loaded here -->
+            <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="company-info" style="text-align: left;">
+                    <img src="/static/uploads/Logo Prealca Sin Fondo.png" alt="Prealca Logo" style="max-width: 300px; height: auto; margin-bottom: 5px;">
+                    <p style="margin: 0; font-size: 0.8em;">RIF.: J-30913171-0</p>
+                </div>
+                <div class="address-info" style="text-align: right; font-size: 0.9em;">
+                    <p style="margin: 0;">Av. 2 parcela E-37, Zona Ind. Sta Cruz</p>
+                    <p style="margin: 0;">Estado Aragua</p>
+                    <p style="margin: 0;">Telf: 04128936930 / Roberto Quintero</p>
+                </div>
+            </div>
+            <h4 style="text-align: center; margin-bottom: 10px;">ORDEN DE COMPRA: <span id="modal_preview_po_number"></span></h4>
+            <p style="text-align: right; margin-bottom: 20px;">Fecha: <span id="modal_preview_po_date"></span></p>
+            
+            <div class="client-details" style="text-align: left; margin-bottom: 20px; font-size: 0.9em;">
+                <p style="margin: 0;"><strong>Proveedor:</strong> <span id="modal_preview_client_name"></span></p>
+                <p style="margin: 0;"><strong>Dirección:</strong> <span id="modal_preview_client_address"></span></p>
+                <p style="margin: 0;"><strong>Rif:</strong> <span id="modal_preview_client_rif"></span></p>
+                <p style="margin: 0;"><strong>CONTACTO:</strong> <span id="modal_preview_client_contact"></span></p>
+                <p style="margin: 0;"><strong>TELF:</strong> <span id="modal_preview_client_phone"></span></p>
+            </div>
+
+            <div class="table-container" style="margin-bottom: 20px;">
+                <table id="modal-preview-items-table" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Material</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cantidad</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Precio Unitario</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-preview-items-tbody">
+                        <!-- Items will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="totals-summary" style="text-align: right; font-size: 0.9em;">
+                <p style="margin: 0; font-weight: bold;">TOTAL A PAGAR: <span id="modal_preview_total_to_pay">0.00</span></p>
+            </div>
+            <p style="text-align: left; margin-top: 20px; font-size: 0.9em;">Son: <span id="modal_preview_total_words"></span></p>
+
+            <button id="modal-download-purchase-pdf" class="btn-add" style="margin-top: 20px; display: none;">Descargar PDF</button>
+            <button id="modal-print-purchase-order" class="btn-add" style="margin-top: 20px; margin-left: 10px; display: none;">Imprimir</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.userInfo = {
+        id: "{{ usuario.id }}",
+        nombre: "{{ usuario.nombre }}",
+        apellido: "{{ usuario.apellido }}",
+        nombreCompleto: "{{ usuario.nombre }} {{ usuario.apellido }}",
+        rol: "{{ usuario.rol }}",
+        foto: "{{ usuario.foto if usuario and usuario.foto else '/static/img/user.png' }}" // Pass photo path to JS
+    };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
+<script src="/static/js/GuiaDeCompra.js"></script>
+<script src="/static/js/dashboard_admin.js"></script>
+</body>
+</html>

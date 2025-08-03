@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prealca - Panel Vendedor</title>
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="/static/css/validation.css">
+<link rel="stylesheet" href="/static/css/quotation-preview.css">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+<div class="user-info">
+    <img id="user-photo" src="{{ usuario.foto if usuario and usuario.foto else '/static/img/user.png' }}" alt="Foto de {{ usuario.nombre if usuario else 'Usuario' }}">
+    <h2 id="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</h2>
+    <p id="user-role">Vendedor</p>
+</div>
+<ul>
+    <li><a href="#" data-page="clientes" class="active"><i class="fas fa-user-friends"></i> Clientes</a></li>
+    <li><a href="#" data-page="cotizaciones"><i class="fas fa-file-invoice-dollar"></i> Cotizaciones</a></li>
+    <li><a href="#" data-page="registro-cotizaciones"><i class="fas fa-clipboard-list"></i> Registro de Cotización</a></li>
+    <li><a href="#" data-page="generar-guia-despacho"><i class="fas fa-truck"></i> Generar Guía de Despacho</a></li>
+    <li><a href="#" data-page="registro-guias-despacho"><i class="fas fa-clipboard-list"></i> Registro de Guías de Despacho</a></li>
+    <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+</ul>
+</div>
+
+<!-- Contenido -->
+<div class="content">
+<!-- Mensajes flash -->
+<div id="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<!-- Clientes -->
+<div id="clientes" class="page active">
+    <h2>Registrar Cliente</h2>
+    <form action="/api/clientes" method="POST" class="form-grid" id="add-client-form-vendedor">
+        <div class="form-group">
+            <label for="nombre_cliente_vendedor">Nombre:</label>
+            <input type="text" id="nombre_cliente_vendedor" name="nombre" placeholder="Nombre del cliente" required>
+            <div id="nombre_cliente_vendedor_validation_message" class="field-validation-message"></div>
+        </div>
+        <div class="form-group">
+            <label for="direccion_cliente_vendedor">Dirección:</label>
+            <input type="text" id="direccion_cliente_vendedor" name="direccion" placeholder="Dirección del cliente" required>
+            <div id="direccion_cliente_vendedor_validation_message" class="field-validation-message"></div>
+        </div>
+        <div class="form-group">
+            <label for="telefono_cliente_vendedor">Teléfono:</label>
+            <input type="tel" id="telefono_cliente_vendedor" name="telefono" placeholder="Teléfono del cliente" required>
+            <div id="telefono_cliente_vendedor_validation_message" class="field-validation-message"></div>
+        </div>
+        <div class="form-group">
+            <label for="documento_cliente_vendedor_type">Documento:</label>
+            <div class="document-input-group">
+                <select id="documento_cliente_vendedor_type" name="documento_type" class="document-prefix-select" required>
+                    <option value="V">V</option>
+                    <option value="J">J</option>
+                </select>
+                <input type="text" id="documento_cliente_vendedor_number" name="documento_number" placeholder="Número de documento (ej. 12345678)" required>
+            </div>
+            <div id="documento_cliente_vendedor_validation_message" class="field-validation-message"></div>
+        </div>
+        <input type="hidden" id="vendedor_cliente_vendedor" name="vendedor">
+        <div class="form-group full-width">
+            <button type="submit">Registrar Cliente</button>
+        </div>
+    </form>
+
+    <h2>Clientes Registrados</h2>
+    <div class="table-container">
+        <table id="clientes-table-vendedor">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Dirección</th>
+                    <th>Teléfono</th>
+                    <th>Documento</th>
+                    <th>Vendedor</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Se llenará con JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="edit-client-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-edit-client-modal">&times;</span>
+            <h3>Editar Cliente</h3>
+            <form action="/api/clientes/" method="POST" class="form-grid" id="edit-client-form">
+                <input type="hidden" id="edit_client_id" name="id">
+                <div class="form-group">
+                    <label for="edit_nombre_cliente">Nombre:</label>
+                    <input type="text" id="edit_nombre_cliente" name="nombre" placeholder="Nombre del cliente" required>
+                    <div id="edit_nombre_cliente_validation_message" class="field-validation-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_direccion_cliente">Dirección:</label>
+                    <input type="text" id="edit_direccion_cliente" name="direccion" placeholder="Dirección del cliente" required>
+                    <div id="edit_direccion_cliente_validation_message" class="field-validation-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_telefono_cliente">Teléfono:</label>
+                    <input type="tel" id="edit_telefono_cliente" name="telefono" placeholder="Teléfono del cliente" required>
+                    <div id="edit_telefono_cliente_validation_message" class="field-validation-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_documento_cliente_type">Documento:</label>
+                    <div class="document-input-group">
+                        <select id="edit_documento_cliente_type" name="documento_type" class="document-prefix-select" required>
+                            <option value="V">V</option>
+                            <option value="J">J</option>
+                            <option value="G">G</option>
+                            <option value="E">E</option>
+                            <option value="P">P</option>
+                        </select>
+                        <input type="text" id="edit_documento_cliente_number" name="documento_number" placeholder="Número de documento (ej. 12345678)" required>
+                    </div>
+                    <div id="edit_documento_cliente_validation_message" class="field-validation-message"></div>
+                </div>
+                <input type="hidden" id="edit_vendedor_cliente_id" name="vendedor">
+                <div class="form-group full-width">
+                    <button type="submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cotizaciones -->
+<div id="cotizaciones" class="page">
+    <h2>Registrar Cotización</h2>
+    <div class="quotation-form-and-preview-layout bg-white p-6 rounded-lg shadow-md">
+        <form id="quotation-form" action="/api/quotations" method="POST" class="form-grid">
+            <div class="form-group">
+                <label for="cot_date">Fecha:</label>
+                <input type="text" id="cot_date" name="cot_date" required readonly>
+            </div>
+            <div class="form-group">
+                <label for="cot_client">Cliente:</label>
+                <select id="cot_client" name="cot_client" required>
+                    <option value="">Seleccione cliente</option>
+                    <!-- Opciones cargadas por JS -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="cot_validity">Validez (días):</label>
+                <input type="number" id="cot_validity" name="cot_validity" min="1" value="30" required>
+            </div>
+            
+            <h3>Productos/Servicios</h3>
+            <div id="quotation_items_container" class="po-items-container full-width space-y-2">
+                <div class="po-item-row header-row grid grid-cols-[0.8fr_2fr_0.5fr_0.5fr_1fr_1fr_0.2fr] gap-2 text-sm font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-2">
+                    <span class="text-center py-2 px-1 bg-gray-100 border border-gray-200 rounded-md shadow-sm">CÓDIGO</span>
+                    <span class="text-center py-2 px-1 bg-gray-100 border border-gray-200 rounded-md shadow-sm">DESCRIPCIÓN</span>
+                    <span class="text-center py-2 px-1 bg-gray-100 border border-gray-200 rounded-md shadow-sm">DÍAS</span>
+                    <span class="text-center py-2 px-1 bg-gray-100 border border-gray-200 rounded-md shadow-sm">CANTIDAD</span>
+                    <span class="text-center py-2 px-1 bg-gray-100 border border-gray-200 rounded-md shadow-sm">P. UNITARIO</span>
+                    <span class="text-center py-2 px-1 bg-gray-100 border border-gray-200 rounded-md shadow-sm">TOTAL</span>
+                </div>
+            </div>
+            <button type="button" id="add-quotation-item-btn" class="btn-add mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Agregar Item</button>
+
+            <div class="form-group full-width totals-summary mt-6 p-4 bg-gray-50 rounded-md border border-gray-200 text-right space-y-1">
+                <p>Sub Total: <span id="cot_subtotal">0.00</span></p>
+                <p>Excento: <span id="cot_exempt_amount">0.00</span></p>
+                <p>Base Imponible: <span id="cot_taxable_base">0.00</span></p>
+                <p>IVA 16%: <span id="cot_iva_amount">0.00</span></p>
+                <p>Total Operación: <span id="cot_total_amount">0.00</span></p>
+            </div>
+            
+            <div class="form-group full-width mt-6">
+                <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Registrar Cotización</button>
+            </div>
+        </form>
+
+        <div class="quotation-preview-wrapper">
+            <div id="quotation-preview" class="quotation-preview">
+                <!-- Quotation preview will be rendered here by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registro de Cotización (New Page) -->
+        <div id="registro-cotizaciones" class="page">
+            <h2>Registro de Cotizaciones</h2>
+            <table id="quotations-table">
+                <thead>
+                    <tr>
+                        <th>Número de Cotización</th>
+                        <th>Fecha Creada</th>
+                        <th>Fecha de Vencimiento</th>
+                        <th>Cliente</th>
+                        <th>Descripción</th>
+                        <th>Cantidad</th>
+                        <th>Precio Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+<div id="generar-guia-despacho" class="page">
+      <h2>Generar Guía de Despacho</h2>
+      <div class="hola">
+          <form id="despacho-form" action="/api/despachos" method="POST" class="form-grid">
+              <div class="form-group">
+                  <label for="fecha_display">Fecha:</label>
+                  <span id="fecha_display" class="form-control-static"></span>
+                  <input type="hidden" id="fecha_hidden" name="fecha">
+              </div>
+              
+              <div class="form-group">
+                  <label for="m3">M3:</label>
+                  <input type="number" id="m3" name="m3" placeholder="Ingrese los M3" step="0.01" min="0.01" required>
+              </div>
+              
+              <div class="form-group">
+                  <label for="diseno">Diseño:</label>
+                  <select id="diseno" name="diseno" required>
+                      <option value="">Seleccione diseño</option>
+                      <!-- Options will be loaded by JavaScript -->
+                  </select>
+              </div>
+
+              <div class="form-group">
+                  <label for="cliente">Cliente:</label>
+                  <select id="cliente" name="cliente" required>
+                      <option value="">Seleccione cliente</option>
+                  </select>
+              </div>
+              
+              <div class="form-group">
+                  <label for="chofer">Chofer:</label>
+                  <select id="chofer" name="chofer" required>
+                      <option value="">Seleccione chofer</option>
+                  </select>
+              </div>
+
+              <div class="form-group">
+                  <label for="camion">Camión:</label>
+                  <select id="camion" name="camion" required>
+                      <option value="">Seleccione camión</option>
+                      <!-- Options will be loaded by JavaScript -->
+                  </select>
+              </div>
+              
+              
+              
+              <div class="form-group full-width">
+                  <button type="submit">Generar Guía</button>
+              </div>
+          </form>
+
+          <div id="dispatch-guide-preview" class="hola1" style="margin-top: 0 !important; border: 1px solid #ccc; padding: 20px; background-color: #fff;">
+              <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <div class="company-info" style="text-align: left;">
+                      <img src="/static/uploads/Logo Prealca Sin Fondo.png" alt="Prealca Logo" style="max-width: 300px; height: auto; margin-bottom: 5px;">
+                      <p style="margin: 0; font-size: 0.8em;">RIF.: J-30913171-0</p>
+                  </div>
+                  <div class="address-info" style="text-align: right; font-size: 0.9em;">
+                      <p style="margin: 0;">Av. 2 parcela E-37, Zona Ind. Sta Cruz</p>
+                      <p style="margin: 0;">Estado Aragua</p>
+                      <p style="margin: 0;">Telf: 04128936930 / Roberto Quintero</p>
+                  </div>
+              </div>
+              <h4 style="text-align: center; margin-bottom: 10px;">GUÍA DE DESPACHO: <span id="preview_guia_number">N/A</span></h4>
+              <p style="text-align: right; margin-bottom: 20px;">Fecha: <span id="preview_dispatch_date">N/A</span></p>
+              
+              <div class="dispatch-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 0.9em;">
+                  <p style="margin: 0;"><strong>Cliente:</strong> <span id="preview_client_name">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Dirección:</strong> <span id="preview_client_address">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Teléfono:</strong> <span id="preview_client_phone">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>RIF/Cédula:</strong> <span id="preview_client_document">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Chofer:</strong> <span id="preview_chofer_name">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Vendedor:</strong> <span id="preview_vendedor_name">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Camión:</strong> <span id="preview_camion_info">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>M3:</strong> <span id="preview_m3">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Diseño:</strong> <span id="preview_diseno_name">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Estado:</strong> <span id="preview_dispatch_status">Pendiente</span></p>
+                  <p style="margin: 0;"><strong>Hora de Salida:</strong> <span id="preview_hora_salida">N/A</span></p>
+                  <p style="margin: 0;"><strong>Hora de Llegada:</strong> <span id="preview_hora_llegada">N/A</span></p>
+              </div>
+
+              <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
+
+              <div class="received-by-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
+                  <p style="margin: 0;"><strong>RECIBIDO POR:</strong></p>
+                  <p style="margin: 0;"><strong>Firma:</strong> <span id="preview_received_signature">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Nombre:</strong> <span id="preview_received_name">SIN RELLENAR</span></p>
+                  <p style="margin: 0;"><strong>Fecha y Hora:</strong> <span id="preview_received_datetime">SIN RELLENAR</span></p>
+              </div>
+          </div>
+      </div>
+  </div>
+  <div id="registro-guias-despacho" class="page">
+      <h2>Registro de Guías de Despacho</h2>
+      <div class="table-container">
+          <table id="despachos-registro-table">
+              <thead>
+                  <tr>
+                      <th>Fecha</th>
+                      <th>N° Guía</th>
+                      <th>M3</th>
+                      <th>Diseño</th>
+                      <th>Cliente</th>
+                      <th>Chofer</th>
+                      <th>Camión</th>
+                      <th>Vendedor</th>
+                      <th>Acciones</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <!-- Se llenará con JavaScript -->
+              </tbody>
+          </table>
+      </div>
+  </div>
+
+<div id="view-quotation-modal" class="modal">
+<div class="modal-content">
+    <span class="close" id="close-view-quotation-modal">&times;</span>
+    <h3>Detalles de Cotización <span id="view_quotation_number"></span></h3>
+    <div class="modal-body">
+        <!-- El contenido de la cotización se renderizará aquí -->
+        <div id="view-quotation-content"></div>
+    </div>
+    <div class="modal-footer flex justify-end gap-2 mt-4">
+        <button type="button" class="btn-add" id="print-quotation-btn"><i class="fas fa-print"></i> Imprimir</button>
+        <button type="button" class="btn-add" id="close-view-quotation-modal-footer">Cerrar</button>
+    </div>
+</div>
+</div>
+
+<div id="purchase-order-details-modal" class="modal">
+      <div class="modal-content" style="max-width: 900px; width: 90%; padding: 0;">
+          <span class="close-po-details-modal">&times;</span>
+          <div id="modal-purchase-order-preview-content" class="diseno-info-container" style="margin-top: 0 !important; border: none; padding: 20px; background-color: #fff;">
+              <!-- Content will be dynamically loaded here -->
+              <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <div class="company-info" style="text-align: left;">
+                      <img src="/static/uploads/Logo Prealca Sin Fondo.png" alt="Prealca Logo" style="max-width: 300px; height: auto; margin-bottom: 5px;">
+                      <p style="margin: 0; font-size: 0.8em;">RIF.: J-30913171-0</p>
+                  </div>
+                  <div class="address-info" style="text-align: right; font-size: 0.9em;">
+                      <p style="margin: 0;">Av. 2 parcela E-37, Zona Ind. Sta Cruz</p>
+                      <p style="margin: 0;">Estado Aragua</p>
+                      <p style="margin: 0;">Telf: 04128936930 / Roberto Quintero</p>
+                  </div>
+              </div>
+              <h4 style="text-align: center; margin-bottom: 10px;">ORDEN DE COMPRA: <span id="modal_preview_po_number"></span></h4>
+              <p style="text-align: right; margin-bottom: 20px;">Fecha: <span id="modal_preview_po_date"></span></p>
+              
+              <div class="client-details" style="text-align: left; margin-bottom: 20px; font-size: 0.9em;">
+                  <p style="margin: 0;"><strong>Proveedor:</strong> <span id="modal_preview_client_name"></span></p>
+                  <p style="margin: 0;"><strong>Dirección:</strong> <span id="modal_preview_client_address"></span></p>
+                  <p style="margin: 0;"><strong>Rif:</strong> <span id="modal_preview_client_rif"></span></p>
+                  <p style="margin: 0;"><strong>CONTACTO:</strong> <span id="modal_preview_client_contact"></span></p>
+                  <p style="margin: 0;"><strong>TELF:</strong> <span id="modal_preview_client_phone"></span></p>
+              </div>
+
+              <div class="table-container" style="margin-bottom: 20px;">
+                  <table id="modal-preview-items-table" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                      <thead>
+                          <tr style="background-color: #f2f2f2;">
+                              <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Material</th>
+                              <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cantidad</th>
+                              <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Precio Unitario</th>
+                              <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
+                          </tr>
+                      </thead>
+                      <tbody id="modal-preview-items-tbody">
+                          <!-- Items will be dynamically added here -->
+                      </tbody>
+                  </table>
+              </div>
+
+              <div class="totals-summary" style="text-align: right; font-size: 0.9em;">
+                  <p style="margin: 0; font-weight: bold;">TOTAL A PAGAR: <span id="modal_preview_total_to_pay">0.00</span></p>
+              </div>
+              <p style="text-align: left; margin-top: 20px; font-size: 0.9em;">Son: <span id="modal_preview_total_words"></span></p>
+
+              <button id="modal-download-purchase-pdf" class="btn-add" style="margin-top: 20px; display: none;">Descargar PDF</button>
+              <button id="modal-print-purchase-order" class="btn-add" style="margin-top: 20px; margin-left: 10px; display: none;">Imprimir</button>
+          </div>
+      </div>
+  </div>
+
+</div>
+
+<!-- Modal para mensajes -->
+<div id="modal-mensaje" class="modal">
+<div class="modal-content">
+    <span class="close">&times;</span>
+    <p id="mensaje-texto"></p>
+    <button id="modal-close-btn">Cerrar</button>
+</div>
+</div>
+
+<script>
+window.userInfo = {
+    id: "{{ usuario.id }}",
+    nombre: "{{ usuario.nombre }}",
+    apellido: "{{ usuario.apellido }}",
+    nombreCompleto: "{{ usuario.nombre }} {{ usuario.apellido }}",
+    rol: "{{ usuario.rol }}",
+    foto: "{{ usuario.foto if usuario and usuario.foto else '/static/img/user.png' }}"
+};
+</script>
+<script src="/static/js/dashboard_vendedor.js"></script>
+<script src="/static/js/validation.js"></script>
+</body>
+</html>

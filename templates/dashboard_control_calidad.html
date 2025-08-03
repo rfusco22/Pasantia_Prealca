@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prealca - Panel Control y Calidad</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/validation.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="user-info">
+            <img id="user-photo" src="{{ usuario.foto if usuario.foto else '/static/img/user.png' }}" alt="Foto de {{ usuario.nombre }}">
+            <h2 id="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</h2>
+            <p id="user-role">Control y Calidad</p>
+        </div>
+        <ul>
+            <li><a href="#" data-page="alertas" class="active"><i class="fas fa-bell"></i> Alertas</a></li>
+            <li><a href="#" data-page="inventario"><i class="fas fa-boxes"></i> Inventario</a></li>
+            <li><a href="#" data-page="diseno-concreto"><i class="fas fa-flask"></i> Diseño de Concreto</a></li>
+            <li><a href="#" data-page="material-requests"><i class="fas fa-box-open"></i> Solicitar Material</a></li>
+            <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+        </ul>
+    </div>
+
+    <!-- Contenido -->
+    <div class="content">
+        <!-- Mensajes flash -->
+        <div id="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Páginas -->
+        <!-- NEW: Alertas Page -->
+        <div id="alertas" class="page active">
+            <h2>Alertas de Inventario</h2>
+            <p class="alert-description">Esta sección muestra alertas sobre el nivel de inventario de los diseños de concreto, indicando si están disponibles, limitados o agotados según la disponibilidad de sus materiales.</p>
+            <div class="alertas-wrapper">
+                <div id="alertas-disenos" class="alertas-container">
+                    <!-- Se llenará con JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div id="inventario" class="page">
+            <h2>Gestión de Inventario</h2>
+            <div class="inventory-actions">
+                <button id="add-item-btn" class="btn-add">Agregar Nuevo Item</button>
+                <button id="add-quantity-btn" class="btn-add">Agregar Cantidad a Material Existente</button>
+            </div>
+            
+            <div id="item-form" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h3 id="form-title">Agregar Item</h3>
+                    <form id="inventario-form" action="/api/inventario" method="POST">
+                        <input type="hidden" id="item_id" name="id">
+                        <div class="form-group">
+                            <label for="nombre_item">Material:</label>
+                            <input type="text" id="nombre_item" name="nombre" required placeholder="Ej: Cemento, Arena">
+                        </div>
+                        <div class="form-group">
+                            <label for="unidad">Unidad de Medida:</label>
+                            <input type="text" id="unidad" name="unidad" required placeholder="Ej: toneladas, M3, litro">
+                        </div>
+                        <div class="form-group">
+                            <label for="cantidad">Cantidad:</label>
+                            <input type="number" id="cantidad" name="cantidad" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="densidad">Densidad (kg/unidad_inventario):</label>
+                            <input type="number" id="densidad" name="densidad" step="0.001" placeholder="Ej: 1600 para Arena en M3">
+                        </div>
+                        <div class="form-group full-width">
+                            <button type="submit">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Nuevo Modal para Agregar Cantidad a Material Existente -->
+            <div id="add-quantity-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-quantity-modal">&times;</span>
+                    <h3>Agregar Cantidad a Material Existente</h3>
+                    <form id="add-quantity-form" action="/api/inventario" method="POST">
+                        <div class="form-group">
+                            <label for="existing_material_select">Seleccionar Material:</label>
+                            <select id="existing_material_select" name="nombre" required>
+                                <option value="">Cargando materiales...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="add_quantity_amount">Cantidad a Añadir:</label>
+                            <input type="number" id="add_quantity_amount" name="cantidad" required min="0.001" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label for="add_quantity_unit">Unidad de Medida:</label>
+                            <input type="text" id="add_quantity_unit" name="unidad" readonly required>
+                        </div>
+                        <div class="form-group full-width">
+                            <button type="submit">Añadir Cantidad</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="inventario-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Nueva sección de diseños de concreto -->
+            <h2>Inventario por Diseños de Concreto</h2>
+            <p class="threshold-info">Estado: <span class="estado-disponible">Disponible</span> (>200m³), <span class="estado-limitado">Limitado</span> (1-200m³), <span class="estado-agotado">Agotado</span> (0m³)</p>
+            <div class="table-container">
+                <table id="disenos-table">
+                    <thead>
+                        <tr>
+                            <th>Diseño</th>
+                            <th>M³ Disponibles</th>
+                            <th>Material Limitante</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    <div id="diseno-concreto" class="page">
+        <h2>Gestión de Diseños de Concreto</h2>
+        <button id="add-design-btn" class="btn-add">Agregar Nuevo Diseño</button>
+
+        <div class="table-container">
+            <table id="concrete-designs-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Resistencia (kgf/cm²)</th>
+                        <th>Asentamiento (")</th>
+                        <th>Materiales</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal para Diseños de Concreto -->
+        <div id="design-form-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-design-modal">&times;</span>
+                <h3 id="design-form-title">Agregar Diseño de Concreto</h3>
+                <form id="concrete-design-form" action="/api/concrete_designs" method="POST">
+                    <input type="hidden" id="design_id" name="id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="design_nombre">Nombre del Diseño:</label>
+                            <input type="text" id="design_nombre" name="nombre" required placeholder="Ej: 210 kgf/cm² - 5&quot;">
+                        </div>
+                        <div class="form-group">
+                            <label for="design_resistencia">Resistencia (kgf/cm²):</label>
+                            <input type="number" id="design_resistencia" name="resistencia" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="design_asentamiento">Asentamiento ("):</label>
+                            <input type="number" id="design_asentamiento" name="asentamiento" required>
+                        </div>
+                    </div>
+
+                    <h3>Materiales por m³ de Concreto</h3>
+                    <div id="design-materials-container">
+                        <!-- Material rows will be added here by JavaScript -->
+                    </div>
+                    <button type="button" id="add-material-row-btn" class="btn-add" style="margin-top: 15px;">Agregar Material</button>
+
+                    <div class="form-group full-width" style="margin-top: 20px;">
+                        <button type="submit">Guardar Diseño</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Solicitar Material Page -->
+    <div id="material-requests" class="page">
+        <h2>Solicitar Material</h2>
+        <div id="flash-messages"></div> <!-- Este div es crucial -->
+        <form id="material-request-form" action="/api/material_requests" method="POST">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="request_material_name">Material:</label>
+                    <select id="request_material_name" name="material_name" required>
+                        <option value="">Seleccione material</option>
+                        <!-- Options will be loaded by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="request_quantity">Cantidad Solicitada:</label>
+                    <input type="number" id="request_quantity" name="quantity_requested" min="0.01" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="request_unit">Unidad de Medida:</label>
+                    <input type="text" id="request_unit" name="unit" readonly required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="request_reason">Razón de la Solicitud:</label>
+                    <textarea id="request_reason" name="reason" rows="3" placeholder="Ej: Bajo stock, proyecto nuevo, etc."></textarea>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit">Enviar Solicitud</button>
+                </div>
+            </div>
+        </form>
+
+        <h2 style="margin-top: 40px;">Historial de Solicitudes de Material</h2>
+        <div class="table-container">
+            <table id="material-requests-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Material</th>
+                        <th>Cantidad</th>
+                        <th>Unidad</th>
+                        <th>Razón</th>
+                        <th>Estado</th>
+                        <th>Respondido Por</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>
+
+    <!-- Modal para mensajes -->
+    <div id="modal-mensaje" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p id="mensaje-texto"></p>
+            <button id="modal-close-btn">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        // Pasar datos del usuario al JavaScript
+        window.userInfo = {
+            id: "{{ usuario.id }}",
+            nombre: "{{ usuario.nombre }}",
+            apellido: "{{ usuario.apellido }}",
+            nombreCompleto: "{{ usuario.nombre }} {{ usuario.apellido }}",
+            rol: "{{ usuario.rol }}"
+        };
+    </script>
+    <script src="/static/js/dashboard_control_calidad.js"></script>
+</body>
+</html>
