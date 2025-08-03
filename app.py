@@ -9,24 +9,26 @@ from flask_mail import Mail, Message
 import pymysql
 from werkzeug.utils import secure_filename
 import threading # Import threading for asynchronous email sending
+import os
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-app.secret_key = "prealca_secret_key_2023"
+# Load secret key from environment variable
+app.secret_key = os.environ.get("SECRET_KEY", "default_secret_for_development_only")
 
-# Configuración de la base de datos MySQL
-db_host = "yamanote.proxy.rlwy.net"
-db_user = "root"
-db_password = "IntAxhBpIcxKbxDnXGEOGDuwoljAnvxF"
-db_name = "railway"
-db_port = 14899
+# Database configuration from environment variables
+db_host = os.environ.get("DB_HOST")
+db_user = os.environ.get("DB_USER")
+db_password = os.environ.get("DB_PASSWORD")
+db_name = os.environ.get("DB_NAME")
+db_port = int(os.environ.get("DB_PORT", 3306)) # Use int() for port
 
-# Configuración del correo
+# Email configuration from environment variables
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'fuscoriccardo11@gmail.com'
-app.config['MAIL_PASSWORD'] = 'fsqa yqdg dxgh smlo'
+app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 mail = Mail(app)
 
 # Helper function to send email asynchronously
