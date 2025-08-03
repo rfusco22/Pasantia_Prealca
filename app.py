@@ -10,6 +10,7 @@ import pymysql
 from werkzeug.utils import secure_filename
 import threading # Import threading for asynchronous email sending
 import os
+from flask import g # Import g
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -64,13 +65,21 @@ UNIVERSAL_ADDITIVES_PER_M3 = {
 }
 
 # Función para conectar con la base de datos
-def get_db_connection():
-  return pymysql.connect(host=db_host,
-                  user=db_user,
-                  password=db_password,
-                  db=db_name,
-                  port=db_port,
-                  cursorclass=pymysql.cursors.DictCursor)
+def get_db():
+    # If a connection is not stored in the 'g' object for this request, create it
+    if 'db' not in g:
+        g.db = pymysql.connect(host=db_host,
+                               user=db_user,
+                               password=db_password,
+                               db=db_name,
+                               port=db_port,
+                               cursorclass=pymysql.cursors.DictCursor)
+    return g.db
+@app.teardown_appcontext
+def teardown_db(exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
 
 # NEW: Helper function to get service details by ID
 def get_service_by_id(service_id):
@@ -1431,55 +1440,49 @@ def get_vendedor_info_by_user_id():
         return jsonify({'success': False, 'message': f'Error interno del servidor: {str(e)}'}), 500
     finally:
         connection.close()
-
-# API para clientes
-@app.route('/api/clientes', methods=['GET'])
 def get_clientes():
- connection = get_db_connection()
- try:
-  with connection.cursor() as cursor:
-   user_role = session.get('user_role')
-   user_id = session.get('user_id')
-   
-   sql_query = """
-    SELECT c.*, v.nombre as vendedor_nombre 
-    FROM clientes c
-    LEFT JOIN vendedores v ON c.vendedor_id = v.id
-   """
-   query_params = []
+    db = get_db() # Get the connection for this request
+    try:
+        with db.cursor() as cursor:
+            user_role = session.get('user_role')
+           user_id = session.get('user_id')
+           
+           sql_query = """
+            SELECT c.*, v.nombre as vendedor_nombre 
+            FROM clientes c
+            LEFT JOIN vendedores v ON c.vendedor_id = v.id
+           """
+           query_params = []
+        
+           if user_role == 'vendedor' and user_id:
+            # Get the cedula of the logged-in user from the 'usuarios' table
+            sql_get_user_cedula = "SELECT cedula FROM usuarios WHERE id = %s"
+            cursor.execute(sql_get_user_cedula, (user_id,))
+            user_cedula_result = cursor.fetchone()
+            
+            if user_cedula_result:
+             user_cedula = user_cedula_result['cedula']
+             # Find the corresponding vendedor_id in the 'vendedores' table using cedula
+             sql_get_vendedor_id = "SELECT id FROM vendedores WHERE cedula = %s"
+             cursor.execute(sql_get_vendedor_id, (user_cedula,))
+             vendedor_id_result = cursor.fetchone()
+             
+             if vendedor_id_result:
+              vendedor_id = vendedor_id_result['id']
+              sql_query += " WHERE c.vendedor_id = %s"
+              query_params.append(vendedor_id)
+             else:
+              # If no corresponding seller found, return empty list
+              return jsonify([]) # <--- This returns an empty JSON array
+            else:
+             # If user not found in 'usuarios', return empty list
+             return jsonify([]) # <--- This returns an empty JSON array
+            cursor.execute(sql_query, tuple(query_params))
+            clientes = cursor.fetchall()
+        return jsonify(clientes)
+    except Exception as e:
+# API para clientes
 
-   if user_role == 'vendedor' and user_id:
-    # Get the cedula of the logged-in user from the 'usuarios' table
-    sql_get_user_cedula = "SELECT cedula FROM usuarios WHERE id = %s"
-    cursor.execute(sql_get_user_cedula, (user_id,))
-    user_cedula_result = cursor.fetchone()
-    
-    if user_cedula_result:
-     user_cedula = user_cedula_result['cedula']
-     # Find the corresponding vendedor_id in the 'vendedores' table using cedula
-     sql_get_vendedor_id = "SELECT id FROM vendedores WHERE cedula = %s"
-     cursor.execute(sql_get_vendedor_id, (user_cedula,))
-     vendedor_id_result = cursor.fetchone()
-     
-     if vendedor_id_result:
-      vendedor_id = vendedor_id_result['id']
-      sql_query += " WHERE c.vendedor_id = %s"
-      query_params.append(vendedor_id)
-     else:
-      # If no corresponding seller found, return empty list
-      return jsonify([]) # <--- This returns an empty JSON array
-    else:
-     # If user not found in 'usuarios', return empty list
-     return jsonify([]) # <--- This returns an empty JSON array
-
-   cursor.execute(sql_query, tuple(query_params))
-   clientes = cursor.fetchall()
-  return jsonify(clientes) # <--- This returns JSON
- except Exception as e:
-  print(f"Error al obtener clientes: {str(e)}")
-  return jsonify({'error': str(e)}), 500 # <--- This returns JSON with an error key
- finally:
-  connection.close()
 
 @app.route('/api/clientes', methods=['POST'])
 def add_cliente():
