@@ -11,12 +11,14 @@ from werkzeug.utils import secure_filename
 import threading # Import threading for asynchronous email sending
 import os
 from flask import g # Import g
+from routes.users import users_bp # Import the blueprint
+
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Load secret key from environment variable
 app.secret_key = os.environ.get("SECRET_KEY", "default_secret_for_development_only")
-
+app.register_blueprint(users_bp) # Register it with the app
 # Database configuration from environment variables
 db_host = os.environ.get("DB_HOST")
 db_user = os.environ.get("DB_USER")
